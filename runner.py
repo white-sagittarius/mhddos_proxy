@@ -157,9 +157,14 @@ def start(total_threads, period, targets, rpc, http_methods, debug):
                 f'через збільшення кількості перемикань кожного потоку між проксі.'
             )
 
-        no_proxies = all(target.lower().startswith('udp://') for target in resolved)
-        if not no_proxies:
-            update_proxies(period, resolved)
+#         no_proxies = all(target.lower().startswith('udp://') for target in resolved)
+#         if not no_proxies:
+#             update_proxies(period, resolved)
+
+        os.makedirs('files/proxies/', exist_ok=True)
+        with open('files/proxies/proxies.txt', 'w') as wr:
+            logger.info('No proxies are being used!')
+
         run_ddos(resolved, total_threads, period, rpc, http_methods, debug)
 
 
@@ -237,7 +242,7 @@ def print_banner():
 
 if __name__ == '__main__':
     args = init_argparse().parse_args()
-    print_banner()
+    # print_banner()
     start(
         args.threads,
         args.period,
